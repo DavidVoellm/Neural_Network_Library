@@ -1,6 +1,6 @@
 # Neural Networks Library
 
-My idea of programming a library for Neural Networks started in 2021. I've began watching a lot of Youtube-Turorials about Machine Learning and programming in general. My experience before that had been Arduino, HTML/CSS/JS, LEGO-Mindstorms and Scratch, so to say the obvious, i was a bloody beginner.
+My idea of programming a library for Neural Networks started in 2021. I've began watching a lot of Youtube-Turorials about Machine Learning and programming in general. My experience before that had been Arduino, HTML/CSS/JS, LEGO-Mindstorms and Scratch, so to say the obvious, I was a bloody beginner.
 
 ## First Try Outs
 
