@@ -4,6 +4,8 @@ class ActivationFunction:
         pass
     def run(self, inputs):
         return inputs
+    def backward(self, dvalues):
+        return dvalues
     def __call__(self, inputs):
         return self.run(inputs)
 class ReLU(ActivationFunction):
@@ -12,6 +14,9 @@ class ReLU(ActivationFunction):
     def run(self, inputs):
         self.output = np.maximum(0,inputs)
         return self.output
+    def backward(self, dvalues):
+        dvalues[self.output <= 0] = 0
+        return dvalues
 class Softmax(ActivationFunction):
     def __init__(self):
         pass
@@ -66,8 +71,8 @@ class Layer_Dense:
             self.output = self.activationFunction.run(self.output)
         return self.output
     def backward(self, dvalues):
-        self.dvalues = dvalues.copy()
-        self.dinputs[self.output <= 0] = 0
+        if self.activationFunction is not None:
+            dvalues = self.activationFunction.backward(dvalues)
 
         self.dweights = np.dot(self.inputs.T, dvalues)
         self.dbiases = np.sum(dvalues, axis=0, keepdims=True)
