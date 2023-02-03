@@ -60,10 +60,18 @@ class Layer_Dense:
         self.biases = np.zeros((1,n_neurons))
         self.activationFunction = ActivationFunction
     def run(self, inputs):
+        self.inputs = inputs
         self.output = np.dot(inputs, self.weights) + self.biases
         if self.activationFunction is not None:
             self.output = self.activationFunction.run(self.output)
         return self.output
+    def backward(self, dvalues):
+        self.dvalues = dvalues.copy()
+        self.dinputs[self.output <= 0] = 0
+
+        self.dweights = np.dot(self.inputs.T, dvalues)
+        self.dbiases = np.sum(dvalues, axis=0, keepdims=True)
+        self.dinputs = np.dot(dvalues, self.weights.T)
     def __call__(self, inputs):
         return self.run(inputs)
 class Network:
