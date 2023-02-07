@@ -3,18 +3,18 @@ import numpy as np
 # for the purpose of this example we're going to use
 # an array of an incremental gradient values
 dvalues = np.array([[1., 1., 1.],
- [2., 2., 2.],
- [3., 3., 3.]])
+                    [2., 2., 2.],
+                    [3., 3., 3.]])
 # We have 3 sets of inputs - samples
 inputs = np.array([[1, 2, 3, 2.5],
- [2., 5., -1., 2],
- [-1.5, 2.7, 3.3, -0.8]])
+                    [2., 5., -1., 2],
+                    [-1.5, 2.7, 3.3, -0.8]])
 # We have 3 sets of weights - one set for each neuron
 # we have 4 inputs, thus 4 weights
 # recall that we keep weights transposed
 weights = np.array([[0.2, 0.8, -0.5, 1],
- [0.5, -0.91, 0.26, -0.5],
- [-0.26, -0.27, 0.17, 0.87]]).T
+                    [0.5, -0.91, 0.26, -0.5],
+                    [-0.26, -0.27, 0.17, 0.87]]).T
 
 # One bias for each neuron
 # biases are the row vector with a shape (1, neurons)
@@ -43,7 +43,6 @@ biases += -1.001 * dbiases
 print(weights)
 print(biases)
 
-r = np.array([6,7,8,9,10,11,12])
-l = np.array([0,1,2,3,4,5,6])
-l[r<= 8] = 0
-print(l)
+print(np.eye(4))
+print(np.eye(3)[1])
+print(np.eye(3)[0,1,2])
