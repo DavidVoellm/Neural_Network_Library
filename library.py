@@ -15,8 +15,9 @@ class ReLU(ActivationFunction):
         self.output = np.maximum(0,inputs)
         return self.output
     def backward(self, dvalues):
-        dvalues[self.output <= 0] = 0
-        return dvalues
+        self.dinputs = dvalues.copy()
+        self.dinputs[self.output <= 0] = 0
+        return self.dinputs
 class Softmax(ActivationFunction):
     def __init__(self):
         pass
@@ -25,6 +26,13 @@ class Softmax(ActivationFunction):
         propabilities = exp_values / np.sum(exp_values, axis = 1, keepdims=True)
         self.output = propabilities
         return self.output
+    def backward(self,dvalues):
+        self.dinputs = np.empty_like(dvalues)
+        for index,(single_output,single_dvalues) in enumerate(zip(self.output, dvalues)):
+            single_output=single_output.reshape(-1,1)
+            jacobian_matrix = np.diagflat(single_output)-np.dot(single_output,single_output.T)
+            self.dinputs[index] = np.dot(jacobian_matrix, single_dvalues)
+
 class Sigmoid(ActivationFunction):
     def __init__(self):
         pass
@@ -35,11 +43,10 @@ class Loss:
     def __init__(self):
         pass
     def calc(self, output, y):
-        
         sampleLosses = self.run(output, y)
         dataLoss = np.mean(sampleLosses)
         return dataLoss
-class CategorialCrossEntropy(Loss):
+class CategoricalCrossEntropy(Loss):
     def __init__(self):
         pass
     def run(self, y_pred, y):
@@ -53,12 +60,43 @@ class CategorialCrossEntropy(Loss):
         
         negative_log_likelihoods = -np.log(correct_confidences)
         return negative_log_likelihoods
+    def backward(self, dvalues, y):
+        samples = len(dvalues)
+        labels = len(dvalues[0])
+        if len(y.shape) == 1:
+            y = np.eye(labels)[y]
+        self.dinputs = -y / dvalues
+        self.dinputs = self.dinputs / samples
+        return self.dinputs
+class Softmax_and_CategoricalCrossEntropy(Loss):
+    def __init__(self):
+        self.activation = Softmax()
+        self.loss = CategoricalCrossEntropy()
+    def run(self, inputs, y):
+        self.output = self.activation(inputs)
+        return self.loss.run(self.output,y)
+        
+    def backward(self, dvalues, y):
+        samples = len(dvalues)
+        if len(y.shape) == 2:
+            y = np.argmax(y, axis=1)
+        self.dinputs = dvalues.copy()
+        self.dinputs[range(samples),y]-=1
+        self.dinputs = self.dinputs / samples
+        return self.dinputs
 class MeanSquaredError(Loss):
     def __init__(self):
         pass
     def run(self, y_pred, y):
         loss = np.sum(np.square((y_pred - y) / y.shape[0]))
         return loss
+    def backward(self, dvalues, y):
+        samples = len(dvalues)
+        outputs = len(dvalues[0])
+
+        self.dinputs = -2*(y-dvalues) / outputs
+        self.dinputs = self.dinputs / samples
+        return self.dinputs
 class Layer_Dense:
     def __init__(self, n_inputs, n_neurons, ActivationFunction:ActivationFunction=None):
         self.weights = 0.01 * np.random.randn(n_inputs, n_neurons)
@@ -80,10 +118,23 @@ class Layer_Dense:
         return self.dinputs
     def __call__(self, inputs):
         return self.run(inputs)
+class Optimizer:
+    def __init__(self, learningrate=1.0):
+        self.learningrate = learningrate
+    def update_Layer(self, layer, learningrate=None):
+        pass
+class SGD(Optimizer):
+    def update_Layer(self, layer, learningrate=None):
+        if learningrate == None:
+            learningrate = self.learningrate
+        layer.weights -= learningrate * layer.dweights
+        layer.biases -= learningrate * layer.biases
+
 class Network:
-    def __init__(self, LossFunc:Loss):
+    def __init__(self, LossFunc:Loss, optimizer:Optimizer=None):
         self.layerList:list(Layer_Dense) = []
         self.lossFunction:Loss = LossFunc
+        self.optimizer = optimizer
     def addLayer(self,layer:Layer_Dense):
         self.layerList.append(layer)
     def run(self, input, oneHot=False):
@@ -105,11 +156,14 @@ class Network:
             y=np.argmax(y,axis=1)
         accuracy = np.mean(predictions == y)
         return accuracy
-    def backPropagation(self,X,y):
-        self.run(X)
-        lowestLoss = self.calcLoss(y)
-        pass
+    def backPropagation(self,y_pred,y):
+        dinputs = self.lossFunction.backward(y_pred,y)
+        for i in range(len(self.layerList)-1,-1,-1):
+            dinputs = self.layerList[i].backward(dinputs)
+       
     def optimizeRandomly(self, iterations, learningRate, X, y):
+        if learningRate == None:
+            learningRate = 1.0
         self.run(X)
         lowestLoss = self.calcLoss(y)
         for i in range(iterations):
@@ -131,3 +185,17 @@ class Network:
                 for i in range(len(self.layerList)):
                     self.layerList[i].weights = weights[i]
                     self.layerList[i].biases = biases[i]
+    def optimize(self,X,y, iterations, learningrate=None):
+        if self.optimizer == None:
+            self.optimizeRandomly(iterations, learningrate, X, y)
+        else:
+            for i in range(iterations):
+                y_pred = self.run(X)
+                self.backPropagation(y_pred, y)
+                for layer in self.layerList:
+                    self.optimizer.update_Layer(layer, learningrate)
+                if i % 100 == 0:
+                    self.run(X)
+                    loss = self.calcLoss(y)
+                    accuracy= self.calcAccuracy(y)
+                    print(f'epoche: {i}, acc: {accuracy:.3f}, loss: {loss:.3f}')
