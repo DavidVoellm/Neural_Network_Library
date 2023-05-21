@@ -121,14 +121,14 @@ class Layer_Dense:
 class Optimizer:
     def __init__(self, learningrate=1.0):
         self.learningrate = learningrate
-    def update_Layer(self, layer, learningrate=None):
+    def update_Layer(self, layer):
         pass
+    def setLearningrate(self, learningrate):
+        self.learningrate = learningrate
 class SGD(Optimizer):
-    def update_Layer(self, layer, learningrate=None):
-        if learningrate == None:
-            learningrate = self.learningrate
-        layer.weights -= learningrate * layer.dweights
-        layer.biases -= learningrate * layer.biases
+    def update_Layer(self, layer):
+        layer.weights -= self.learningrate * layer.dweights
+        layer.biases -= self.learningrate * layer.biases
 
 class Network:
     def __init__(self, LossFunc:Loss, optimizer:Optimizer=None):
@@ -185,16 +185,18 @@ class Network:
                 for i in range(len(self.layerList)):
                     self.layerList[i].weights = weights[i]
                     self.layerList[i].biases = biases[i]
-    def optimize(self,X,y, iterations, learningrate=None):
+    def optimize(self,X,y, iterations, feedback=100, learningrate=None):
         if self.optimizer == None:
             self.optimizeRandomly(iterations, learningrate, X, y)
         else:
+            if not learningrate is None:
+                self.optimizer.setLearningrate(learningrate)
             for i in range(iterations):
                 y_pred = self.run(X)
                 self.backPropagation(y_pred, y)
                 for layer in self.layerList:
-                    self.optimizer.update_Layer(layer, learningrate)
-                if i % 100 == 0:
+                    self.optimizer.update_Layer(layer)
+                if i % feedback == 0:
                     self.run(X)
                     loss = self.calcLoss(y)
                     accuracy= self.calcAccuracy(y)

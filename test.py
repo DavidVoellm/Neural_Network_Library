@@ -17,3 +17,4 @@ print("pause")
 print(myNN.run(np.array(X))[:5])
 print("Loss:\t"+ str(myNN.calcLoss(y)))
 print("Accuracy:\t"+ str(myNN.calcAccuracy(y)))
+
