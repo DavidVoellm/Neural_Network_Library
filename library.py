@@ -127,8 +127,8 @@ class Optimizer:
         self.learningrate = learningrate
 class SGD(Optimizer):
     def update_Layer(self, layer):
-        layer.weights -= self.learningrate * layer.dweights
-        layer.biases -= self.learningrate * layer.biases
+        layer.weights += -self.learningrate * layer.dweights
+        layer.biases += -self.learningrate * layer.dbiases
 
 class Network:
     def __init__(self, LossFunc:Loss, optimizer:Optimizer=None):
@@ -175,6 +175,7 @@ class Network:
                 shape = layer.weights.shape
                 layer.weights += learningRate * np.random.randn(shape[0], shape[1])
                 layer.biases += learningRate * np.random.randn(1,shape[1])
+
             self(X)
             loss = self.calcLoss(y)
 
@@ -185,6 +186,7 @@ class Network:
                 for i in range(len(self.layerList)):
                     self.layerList[i].weights = weights[i]
                     self.layerList[i].biases = biases[i]
+        self.backPropagation(self.output, y)
     def optimize(self,X,y, iterations, feedback=100, learningrate=None):
         if self.optimizer == None:
             self.optimizeRandomly(iterations, learningrate, X, y)
@@ -196,6 +198,8 @@ class Network:
                 self.backPropagation(y_pred, y)
                 for layer in self.layerList:
                     self.optimizer.update_Layer(layer)
+                self.run(X)
+                print("test"+str(self.calcLoss(y)))
                 if i % feedback == 0:
                     self.run(X)
                     loss = self.calcLoss(y)
