@@ -158,7 +158,9 @@ class Network:
         return accuracy
     def backPropagation(self,y_pred,y):
         dinputs = self.lossFunction.backward(y_pred,y)
+        print(dinputs.shape)
         for i in range(len(self.layerList)-1,-1,-1):
+            print(i)
             dinputs = self.layerList[i].backward(dinputs)
        
     def optimizeRandomly(self, iterations, learningRate, X, y):
@@ -186,7 +188,6 @@ class Network:
                 for i in range(len(self.layerList)):
                     self.layerList[i].weights = weights[i]
                     self.layerList[i].biases = biases[i]
-        self.backPropagation(self.output, y)
     def optimize(self,X,y, iterations, feedback=100, learningrate=None):
         if self.optimizer == None:
             self.optimizeRandomly(iterations, learningrate, X, y)
@@ -198,8 +199,6 @@ class Network:
                 self.backPropagation(y_pred, y)
                 for layer in self.layerList:
                     self.optimizer.update_Layer(layer)
-                self.run(X)
-                print("test"+str(self.calcLoss(y)))
                 if i % feedback == 0:
                     self.run(X)
                     loss = self.calcLoss(y)
